@@ -1,9 +1,9 @@
 # Ralph Installer - Sets up Ralph in the current project
-# Usage: iex (irm https://raw.githubusercontent.com/snarktank/ralph/main/init-ralph.ps1)
+# Usage: iex (irm https://raw.githubusercontent.com/KyleBastien/ralph-windows/main/init-ralph.ps1)
 
 $ErrorActionPreference = "Stop"
 
-$BaseUrl = "https://raw.githubusercontent.com/snarktank/ralph/main"
+$BaseUrl = "https://raw.githubusercontent.com/KyleBastien/ralph-windows/main"
 $RalphDir = Join-Path (Get-Location) "scripts\ralph"
 $SkillsDir = Join-Path $RalphDir "skills"
 
