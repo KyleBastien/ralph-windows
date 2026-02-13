@@ -2,18 +2,28 @@
 
 ![Ralph](ralph.webp)
 
-Ralph is an autonomous AI agent loop that runs AI coding tools ([Amp](https://ampcode.com) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) repeatedly until all PRD items are complete. Each iteration is a fresh instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`.
+Ralph is an autonomous AI agent loop that runs AI coding tools ([Copilot CLI](https://docs.github.com/en/copilot) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) repeatedly until all PRD items are complete. Each iteration is a fresh instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`.
 
 Based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph/).
 
 [Read my in-depth article on how I use Ralph](https://x.com/ryancarson/status/2008548371712135632)
 
+## Quick Start
+
+Run this one-liner in your project directory to install Ralph:
+
+```powershell
+iex (irm https://raw.githubusercontent.com/snarktank/ralph/main/init-ralph.ps1)
+```
+
+This creates `scripts\ralph\` with everything you need, and updates your `.gitignore`.
+
 ## Prerequisites
 
 - One of the following AI coding tools installed and authenticated:
-  - [Amp CLI](https://ampcode.com) (default)
+  - [Copilot CLI](https://docs.github.com/en/copilot) (default)
   - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`npm install -g @anthropic-ai/claude-code`)
-- `jq` installed (`brew install jq` on macOS)
+- PowerShell 5.1+ (included with Windows) or PowerShell 7+ (cross-platform)
 - A git repository for your project
 
 ## Setup
@@ -22,33 +32,20 @@ Based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph/).
 
 Copy the ralph files into your project:
 
-```bash
+```powershell
 # From your project root
-mkdir -p scripts/ralph
-cp /path/to/ralph/ralph.sh scripts/ralph/
-
-# Copy the prompt template for your AI tool of choice:
-cp /path/to/ralph/prompt.md scripts/ralph/prompt.md    # For Amp
-# OR
-cp /path/to/ralph/CLAUDE.md scripts/ralph/CLAUDE.md    # For Claude Code
-
-chmod +x scripts/ralph/ralph.sh
+New-Item -ItemType Directory -Path scripts\ralph -Force
+Copy-Item \path\to\ralph\ralph.ps1 scripts\ralph\
+Copy-Item \path\to\ralph\CLAUDE.md scripts\ralph\
 ```
 
-### Option 2: Install skills globally (Amp)
+### Option 2: Install skills globally
 
-Copy the skills to your Amp or Claude config for use across all projects:
+Copy the skills to your Claude config for use across all projects:
 
-For AMP
-```bash
-cp -r skills/prd ~/.config/amp/skills/
-cp -r skills/ralph ~/.config/amp/skills/
-```
-
-For Claude Code (manual)
-```bash
-cp -r skills/prd ~/.claude/skills/
-cp -r skills/ralph ~/.claude/skills/
+```powershell
+Copy-Item -Recurse skills\prd $env:USERPROFILE\.claude\skills\
+Copy-Item -Recurse skills\ralph $env:USERPROFILE\.claude\skills\
 ```
 
 ### Option 3: Use as Claude Code Marketplace
@@ -72,18 +69,6 @@ Available skills after installation:
 Skills are automatically invoked when you ask Claude to:
 - "create a prd", "write prd for", "plan this feature"
 - "convert this prd", "turn into ralph format", "create prd.json"
-
-### Configure Amp auto-handoff (recommended)
-
-Add to `~/.config/amp/settings.json`:
-
-```json
-{
-  "amp.experimental.autoHandoff": { "context": 90 }
-}
-```
-
-This enables automatic handoff when context fills up, allowing Ralph to handle large stories that exceed a single context window.
 
 ## Workflow
 
@@ -109,15 +94,15 @@ This creates `prd.json` with user stories structured for autonomous execution.
 
 ### 3. Run Ralph
 
-```bash
-# Using Amp (default)
-./scripts/ralph/ralph.sh [max_iterations]
+```powershell
+# Using Copilot CLI (default)
+.\scripts\ralph\ralph.ps1 [-MaxIterations 10]
 
 # Using Claude Code
-./scripts/ralph/ralph.sh --tool claude [max_iterations]
+.\scripts\ralph\ralph.ps1 -Tool claude [-MaxIterations 10]
 ```
 
-Default is 10 iterations. Use `--tool amp` or `--tool claude` to select your AI coding tool.
+Default is 10 iterations. Use `-Tool copilot` or `-Tool claude` to select your AI coding tool.
 
 Ralph will:
 1. Create a feature branch (from PRD `branchName`)
@@ -133,14 +118,13 @@ Ralph will:
 
 | File | Purpose |
 |------|---------|
-| `ralph.sh` | The bash loop that spawns fresh AI instances (supports `--tool amp` or `--tool claude`) |
-| `prompt.md` | Prompt template for Amp |
-| `CLAUDE.md` | Prompt template for Claude Code |
+| `ralph.ps1` | The PowerShell loop that spawns fresh AI instances (supports `-Tool copilot` or `-Tool claude`) |
+| `CLAUDE.md` | Shared prompt template used by both tools |
 | `prd.json` | User stories with `passes` status (the task list) |
 | `prd.json.example` | Example PRD format for reference |
 | `progress.txt` | Append-only learnings for future iterations |
-| `skills/prd/` | Skill for generating PRDs (works with Amp and Claude Code) |
-| `skills/ralph/` | Skill for converting PRDs to JSON (works with Amp and Claude Code) |
+| `skills/prd/` | Skill for generating PRDs |
+| `skills/ralph/` | Skill for converting PRDs to JSON |
 | `.claude-plugin/` | Plugin manifest for Claude Code marketplace discovery |
 | `flowchart/` | Interactive visualization of how Ralph works |
 
@@ -152,7 +136,7 @@ Ralph will:
 
 The `flowchart/` directory contains the source code. To run locally:
 
-```bash
+```powershell
 cd flowchart
 npm install
 npm run dev
@@ -162,7 +146,7 @@ npm run dev
 
 ### Each Iteration = Fresh Context
 
-Each iteration spawns a **new AI instance** (Amp or Claude Code) with clean context. The only memory between iterations is:
+Each iteration spawns a **new AI instance** (Copilot CLI or Claude Code) with clean context. The only memory between iterations is:
 - Git history (commits from previous iterations)
 - `progress.txt` (learnings and context)
 - `prd.json` (which stories are done)
@@ -200,7 +184,7 @@ Ralph only works if there are feedback loops:
 
 ### Browser Verification for UI Stories
 
-Frontend stories must include "Verify in browser using dev-browser skill" in acceptance criteria. Ralph will use the dev-browser skill to navigate to the page, interact with the UI, and confirm changes work.
+Frontend stories should include browser verification in acceptance criteria when browser testing tools are available. If no browser tools are available, note in the progress report that manual verification is needed.
 
 ### Stop Condition
 
@@ -210,12 +194,12 @@ When all stories have `passes: true`, Ralph outputs `<promise>COMPLETE</promise>
 
 Check current state:
 
-```bash
+```powershell
 # See which stories are done
-cat prd.json | jq '.userStories[] | {id, title, passes}'
+(Get-Content prd.json | ConvertFrom-Json).userStories | Select-Object id, title, passes
 
 # See learnings from previous iterations
-cat progress.txt
+Get-Content progress.txt
 
 # Check git history
 git log --oneline -10
@@ -223,7 +207,7 @@ git log --oneline -10
 
 ## Customizing the Prompt
 
-After copying `prompt.md` (for Amp) or `CLAUDE.md` (for Claude Code) to your project, customize it for your project:
+After copying `CLAUDE.md` to your project, customize it for your project:
 - Add project-specific quality check commands
 - Include codebase conventions
 - Add common gotchas for your stack
@@ -235,5 +219,5 @@ Ralph automatically archives previous runs when you start a new feature (differe
 ## References
 
 - [Geoffrey Huntley's Ralph article](https://ghuntley.com/ralph/)
-- [Amp documentation](https://ampcode.com/manual)
+- [Copilot CLI documentation](https://docs.github.com/en/copilot)
 - [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)

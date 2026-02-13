@@ -1,9 +1,9 @@
 {
   "name": "ralph-skills",
   "version": "1.0.0",
-  "description": "Skills for the Ralph autonomous agent system - Generate PRDs and convert them to prd.json format for autonomous execution",
+  "description": "Skills for the Ralph autonomous agent system - Generate PRDs and convert them to prd.json format for autonomous execution with Copilot CLI or Claude Code",
   "author": {
-    "name": "snarktank"
+    "name": "KyleBastien"
   },
   "skills": "./skills/",
   "keywords": ["ralph", "prd", "automation", "agent", "planning", "requirements"]
