@@ -2,9 +2,9 @@
 
 ![Ralph-Windows](ralph.webp)
 
-Ralph is an autonomous AI agent loop that runs AI coding tools ([Copilot CLI](https://docs.github.com/en/copilot) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) repeatedly until all PRD items are complete. Each iteration is a fresh instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`.
+## This is forked from [snarktank/ralph](https://github.com/snarktank/ralph) and adapted for Windows. snarktank deserves all the credit here.
 
-This is forked from [snarktank/ralph](https://github.com/snarktank/ralph) and adapted for a windows environment.
+Ralph is an autonomous AI agent loop that runs AI coding tools ([Copilot CLI](https://docs.github.com/en/copilot) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) repeatedly until all PRD items are complete. Each iteration is a fresh instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`.
 
 Based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph/).
 
