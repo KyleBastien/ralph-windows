@@ -69,19 +69,90 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     Write-Host "==============================================================="
 
     $PromptContent = Get-Content $PromptFile -Raw
+    $Output = ""
+    $TempOutput = [System.IO.Path]::GetTempFileName()
 
-    # Run the selected tool with the ralph prompt
     try {
         if ($Tool -eq "copilot") {
-            $Output = copilot -p $PromptContent 2>&1 | Tee-Object -Variable Output | Write-Host
-            $Output = $Output -join "`n"
+            # Copilot CLI: stream plain text output line-by-line
+            $LastWasTool = $false
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo.FileName = "copilot"
+            $process.StartInfo.Arguments = "-p `"$($PromptContent -replace '"', '\"')`" --allow-all --stream on --silent"
+            $process.StartInfo.RedirectStandardOutput = $true
+            $process.StartInfo.RedirectStandardError = $true
+            $process.StartInfo.UseShellExecute = $false
+            $process.StartInfo.CreateNoWindow = $true
+            $process.Start() | Out-Null
+
+            $reader = $process.StandardOutput
+            while (-not $reader.EndOfStream) {
+                $line = $reader.ReadLine()
+                if (-not $line) { continue }
+                Write-Host $line
+                [System.IO.File]::AppendAllText($TempOutput, "$line`n")
+            }
+
+            $process.WaitForExit()
         } else {
-            $Output = $PromptContent | claude --dangerously-skip-permissions --print 2>&1 | Tee-Object -Variable Output | Write-Host
-            $Output = $Output -join "`n"
+            # Claude Code: stream-json for real-time output display
+            $LastWasTool = $false
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo.FileName = "claude"
+            $process.StartInfo.Arguments = "--dangerously-skip-permissions -p --output-format stream-json --verbose"
+            $process.StartInfo.RedirectStandardInput = $true
+            $process.StartInfo.RedirectStandardOutput = $true
+            $process.StartInfo.RedirectStandardError = $true
+            $process.StartInfo.UseShellExecute = $false
+            $process.StartInfo.CreateNoWindow = $true
+            $process.Start() | Out-Null
+
+            $process.StandardInput.Write($PromptContent)
+            $process.StandardInput.Close()
+
+            $reader = $process.StandardOutput
+            while (-not $reader.EndOfStream) {
+                $line = $reader.ReadLine()
+                if (-not $line) { continue }
+
+                try {
+                    $json = $line | ConvertFrom-Json -ErrorAction SilentlyContinue
+                    if (-not $json) { continue }
+
+                    if ($json.type -eq "assistant" -and $json.message.content) {
+                        foreach ($block in $json.message.content) {
+                            if ($block.type -eq "text") {
+                                # Add newline before text if last output was a tool
+                                if ($LastWasTool) {
+                                    Write-Host ""
+                                    [System.IO.File]::AppendAllText($TempOutput, "`n")
+                                }
+                                Write-Host -NoNewline $block.text
+                                [System.IO.File]::AppendAllText($TempOutput, $block.text)
+                                $LastWasTool = $false
+                            } elseif ($block.type -eq "tool_use") {
+                                $toolMsg = "`n-> Using: $($block.name)"
+                                Write-Host $toolMsg
+                                [System.IO.File]::AppendAllText($TempOutput, $toolMsg)
+                                $LastWasTool = $true
+                            }
+                        }
+                    }
+                } catch {
+                    # Non-JSON line, skip
+                }
+            }
+
+            $process.WaitForExit()
         }
+
+        $Output = Get-Content $TempOutput -Raw -ErrorAction SilentlyContinue
+        if (-not $Output) { $Output = "" }
     } catch {
-        Write-Host "Tool execution encountered an error: $_"
+        Write-Host "Tool execution encountered an error: $_" -ForegroundColor Red
         $Output = ""
+    } finally {
+        Remove-Item $TempOutput -Force -ErrorAction SilentlyContinue
     }
 
     # Check for completion signal
