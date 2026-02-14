@@ -64,6 +64,30 @@ if (-not (Test-Path $claudeDir)) {
     Write-Host "  Warning: .claude directory exists but is not a symlink to .agents" -ForegroundColor Yellow
 }
 
+# Ensure .github/skills symlink exists pointing to .agents/skills
+$githubDir = Join-Path (Get-Location) ".github"
+$githubSkillsDir = Join-Path $githubDir "skills"
+$agentsSkillsDir = Join-Path $agentsDir "skills"
+New-Item -ItemType Directory -Path $githubDir -Force | Out-Null
+if (-not (Test-Path $githubSkillsDir)) {
+    Write-Host "  Creating .github\skills -> .agents\skills symlink..."
+    try {
+        New-Item -ItemType SymbolicLink -Path $githubSkillsDir -Target $agentsSkillsDir -Force | Out-Null
+    } catch {
+        Write-Host "  Requesting admin privileges for symlink creation..." -ForegroundColor Yellow
+        try {
+            Start-Process -Verb RunAs -FilePath "pwsh" -ArgumentList "-Command", "New-Item -ItemType SymbolicLink -Path '$githubSkillsDir' -Target '$agentsSkillsDir' -Force" -Wait
+        } catch {
+            Write-Host "  Could not create symlink. Please run as admin:" -ForegroundColor Red
+            Write-Host "    New-Item -ItemType SymbolicLink -Path '$githubSkillsDir' -Target '$agentsSkillsDir'" -ForegroundColor Cyan
+        }
+    }
+} elseif ((Get-Item $githubSkillsDir).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+    Write-Host "  .github\skills symlink already exists"
+} else {
+    Write-Host "  Warning: .github\skills directory exists but is not a symlink to .agents\skills" -ForegroundColor Yellow
+}
+
 # Update .gitignore
 $gitignorePath = Join-Path (Get-Location) ".gitignore"
 $ralphIgnores = @(
