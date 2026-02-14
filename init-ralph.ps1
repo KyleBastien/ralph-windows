@@ -18,9 +18,8 @@ New-Item -ItemType Directory -Path (Join-Path $SkillsDir "ralph") -Force | Out-N
 
 # Download ralph files to scripts\ralph
 $ralphFiles = @{
-    "ralph.ps1"        = "ralph.ps1"
-    "CLAUDE.md"        = "CLAUDE.md"
-    "prd.json.example" = "prd.json.example"
+    "ralph.ps1" = "ralph.ps1"
+    "CLAUDE.md" = "CLAUDE.md"
 }
 
 foreach ($entry in $ralphFiles.GetEnumerator()) {
