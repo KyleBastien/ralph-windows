@@ -10,8 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$RepoRoot = (git -C $ScriptDir rev-parse --show-toplevel 2>$null)
-if (-not $RepoRoot) {
+if (-not (git -C $ScriptDir rev-parse --show-toplevel 2>$null)) {
     Write-Host "Error: Could not determine git repo root from $ScriptDir" -ForegroundColor Red
     exit 1
 }
@@ -84,7 +83,7 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
             $process = New-Object System.Diagnostics.Process
             $process.StartInfo.FileName = "copilot"
             $process.StartInfo.Arguments = "-p `"$($PromptContent -replace '"', '\"')`" --allow-all --stream on --silent"
-            $process.StartInfo.WorkingDirectory = $RepoRoot
+            $process.StartInfo.WorkingDirectory = $ScriptDir
             $process.StartInfo.RedirectStandardOutput = $true
             $process.StartInfo.RedirectStandardError = $true
             $process.StartInfo.UseShellExecute = $false
@@ -106,7 +105,7 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
             $process = New-Object System.Diagnostics.Process
             $process.StartInfo.FileName = "claude"
             $process.StartInfo.Arguments = "--dangerously-skip-permissions -p --output-format stream-json --verbose"
-            $process.StartInfo.WorkingDirectory = $RepoRoot
+            $process.StartInfo.WorkingDirectory = $ScriptDir
             $process.StartInfo.RedirectStandardInput = $true
             $process.StartInfo.RedirectStandardOutput = $true
             $process.StartInfo.RedirectStandardError = $true
@@ -157,7 +156,7 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
             $process = New-Object System.Diagnostics.Process
             $process.StartInfo.FileName = "codex"
             $process.StartInfo.Arguments = "exec --json --dangerously-bypass-approvals-and-sandbox `"$($PromptContent -replace '"', '\"')`""
-            $process.StartInfo.WorkingDirectory = $RepoRoot
+            $process.StartInfo.WorkingDirectory = $ScriptDir
             $process.StartInfo.RedirectStandardOutput = $true
             $process.StartInfo.RedirectStandardError = $true
             $process.StartInfo.UseShellExecute = $false
