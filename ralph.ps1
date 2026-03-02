@@ -10,7 +10,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (-not (git -C $ScriptDir rev-parse --show-toplevel 2>$null)) {
+$null = git -C $ScriptDir rev-parse --show-toplevel 2>&1
+if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Could not determine git repo root from $ScriptDir" -ForegroundColor Red
     exit 1
 }
